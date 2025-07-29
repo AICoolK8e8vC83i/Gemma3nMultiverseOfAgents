@@ -1,0 +1,4 @@
+## **Gemma 3n Multiverse Group with over 100 Agents Across Different Categories including: : Accesibility, Career, Creativity, education, education_technology, environmental_sustainability, ethics_philosophy, finance, health_fitness, health advice, healthcare_innovation, home_environment, mental_health, cooking, dieting multilingual_communciation, productivity, relationships, research analysis, social_impact, travel, raising_babies_pregnancy_care, agentic_AI, AI_ML_Datascience, cybersecurity, fullstack_app_development, mobile_ios_android_apps and a Streamlit Dashboard, overthinking/anxiety/depression/PTSD/trauma, etc**
+
+
+**Gemma 3n has the ability to take an image and display what's on your camera, and also video analysis, and it's main differentiators are the mixture of experts agents (see Technical_Architecture.md)**
