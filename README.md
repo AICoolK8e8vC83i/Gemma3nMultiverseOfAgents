@@ -9,7 +9,7 @@
 [![Streamlit](https://img.shields.io/badge/Interface-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Ollama](https://img.shields.io/badge/AI%20Engine-Ollama-00D4AA?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.ai)
 
-### 🎥 **[▶ WATCH THE DEMO](https://youtube.com/watch?v=YOUR_DEMO_VIDEO_ID)**
+### 🎥 **[▶ WATCH THE DEMO][(https://youtube.com/watch?v=YOUR_DEMO_VIDEO_ID](https://youtu.be/vJm0wXDq9is))**
 *See Gemma 3n Multiverse in action - changing lives through AI*
 
 </div>
@@ -255,7 +255,6 @@ streamlit run streamlit.py
 |:---:|:---:|
 | 🏆 **Overall Winner ($50K)**<br/>Revolutionary AI system | 🤖 **Ollama Prize ($10K)**<br/>Advanced local AI deployment |
 | 🥈 **Second Place ($25K)**<br/>Exceptional innovation | 🔧 **Google AI Edge Prize ($10K)**<br/>Cutting-edge on-device AI |
-| 🥉 **Third Place ($15K)**<br/>Outstanding execution | 🦾 **LeRobot Prize ($10K)**<br/>AI agent orchestration |
 
 </div>
 
@@ -267,14 +266,14 @@ streamlit run streamlit.py
 
 ```yaml
 🧠 AI Models:
-  Primary: Gemma 3n (1b, 3:1b, 8b parameters)
-  Vision: LLaVA 13B (multimodal understanding)
-  Thinking: Qwen 3:0.6b (strategic analysis)
+  Primary: Gemma 3n:e4b & Gemma 3:1b
+  Vision: LLaVA 7B (multimodal understanding)
+  Thinking: Qwen 3:0.6b (strategic analysis & SOTA context via Qwen 3:0.6b's knowledge that's completely offline)
 
 ⚡ Performance:
-  Response Time: <2s average
+  Response Time: 10-30 sec average
   Offline Capability: 100% functional
-  Memory Usage: <4GB typical
+  Memory Usage: <16GB typical
   Agent Switching: <500ms
 
 🔒 Privacy:
@@ -284,11 +283,100 @@ streamlit run streamlit.py
 ```
 
 ### 🌐 **Deployment Ready**
+# 🚨 **CRITICAL: Install Ollama First!**
 
-<details>
-<summary><b>🐳 Docker Deployment</b></summary>
+> ⚠️ **STOP!** Before anything else, you MUST install Ollama and download the required models. **The system will NOT work without these!**
+
+## 🔥 **Step 1: Install Ollama** 
+
+### 📥 **Download Ollama**
+```bash
+# 🐧 Linux/macOS
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# 🪟 Windows
+# Download from: https://ollama.ai/download
+```
+
+### 🔄 **Start Ollama Service**
+```bash
+# 🚀 Start the Ollama server
+ollama serve
+```
+
+## 🤖 **Step 2: Download Required Models**
+
+### ⚡ **Quick Install All Models (Recommended)**
+```bash
+# 🎯 Copy and paste this entire block
+ollama pull gemma3:1b        # 815 MB - Core reasoning
+ollama pull llava:7b         # 4.7 GB - Vision & multimodal  
+ollama pull qwen3:1.7b       # 1.4 GB - Advanced reasoning
+ollama pull gemma3n:e4b      # 7.5 GB - Main Gemma 3n model
+ollama pull qwen3:0.6b       # 522 MB - Strategic thinking
+```
+
+### 📊 **Total Download Size: ~14.5 GB**
+*Make sure you have sufficient disk space and a stable internet connection*
+
+### ✅ **Verify Installation**
+```bash
+# 🔍 Check all models are installed
+ollama list
+```
+
+**Expected output:**
+```
+NAME           ID              SIZE      MODIFIED     
+gemma3:1b      8648f39daa8f    815 MB    X hours ago
+llava:7b       8dd30f6b0cb1    4.7 GB    X hours ago
+qwen3:1.7b     8f68893c685c    1.4 GB    X hours ago
+gemma3n:e4b    15cb39fd9394    7.5 GB    X hours ago
+qwen3:0.6b     7df6b6e09427    522 MB    X hours ago
+```
+
+## 🚀 **Step 3: Now Install Gemma 3n Multiverse**
+
+```bash
+# 🏗️ Clone and setup the project
+git clone https://github.com/DarrenPWright/Gemma3nMultiverseOfAgents.git
+cd Gemma3nMultiverseOfAgents
+
+# 🐍 Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 📦 Install dependencies
+pip install -r requirements.txt
+
+# 🎉 Launch the multiverse!
+streamlit run streamlit.py
+```
+
+## 🔧 **Troubleshooting**
+
+### ❌ **Common Issues**
+
+| **Problem** | **Solution** |
+|:---|:---|
+| `ollama: command not found` | Install Ollama first from https://ollama.ai |
+| `Model not found` error | Run `ollama pull <model-name>` for missing models |
+| Slow responses | Ensure Ollama is running: `ollama serve` |
+| Port 11434 in use | Restart Ollama: `pkill ollama && ollama serve` |
+
+### 💻 **System Requirements**
+- **RAM**: 16GB+ recommended (8GB minimum)
+- **Storage**: 20GB free space for models
+- **OS**: Windows 10+, macOS 10.15+, Linux (Ubuntu 20.04+)
+
+---
+
+## 🐳 **Docker Alternative (Advanced)**
+
+If you prefer Docker and have the models already:
 
 ```dockerfile
+# 🚨 NOTE: You still need Ollama running on the host!
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -298,10 +386,21 @@ RUN pip install -r requirements.txt
 COPY . .
 EXPOSE 8501
 
+# 🔗 Connect to host Ollama
+ENV OLLAMA_HOST=host.docker.internal:11434
+
 CMD ["streamlit", "run", "streamlit.py", "--server.port=8501"]
 ```
 
-</details>
+```bash
+# 🚀 Run with Docker
+docker build -t gemma3n-multiverse .
+docker run -p 8501:8501 --add-host=host.docker.internal:host-gateway gemma3n-multiverse
+```
+
+---
+
+> 🎯 **Ready?** Once Ollama is running with all models, your Gemma 3n Multiverse will be **blazingly fast** and **completely offline**! 
 
 <details>
 <summary><b>☁️ Cloud Deployment</b></summary>
