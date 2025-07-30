@@ -890,6 +890,7 @@ def render_goals_dashboard():
     
     # Display active goals
     active_goals = gemma_system.get_active_goals()
+    print(f"🎯 SIDEBAR: Retrieved {len(active_goals)} active goals")
     
     if not active_goals:
         st.markdown("""
@@ -1070,10 +1071,54 @@ def render_goal_suggestions(suggested_goals: List[str]):
             
             with col2:
                 if st.button("✅ Add", key=f"add_goal_{i}_{time.time()}"):  # Unique key
-                    success = gemma_system.create_goal_from_suggestion(goal)
-                    if success:
-                        st.success("🎉 Goal added to your list!")
-                        st.rerun()
+                    # Handle both string and dict formats
+                    try:
+                        if isinstance(goal, str):
+                            print(f"🎯 ADDING STRING GOAL: {goal}")
+                            success = gemma_system.create_goal_from_suggestion(
+                                goal_title=goal,
+                                category="general",
+                                description="AI suggested goal",
+                                priority="medium"
+                            )
+                        else:
+                            # Extract data from goal dictionary
+                            goal_title = goal.get("title", "")
+                            category = goal.get("category", "general")
+                            milestones = goal.get("milestones", [])
+                            routines = goal.get("routines", [])
+                            
+                            print(f"🎯 ADDING DICT GOAL: {goal_title} with {len(milestones)} milestones and {len(routines)} routines")
+                            
+                            # Convert string lists to dict format for milestones and routines
+                            milestone_dicts = [{"title": m, "status": "pending", "progress_percentage": 0} for m in milestones]
+                            routine_dicts = [{"title": r, "frequency": "daily", "streak_count": 0, "longest_streak": 0} for r in routines]
+                            
+                            success = gemma_system.create_goal_from_suggestion(
+                                goal_title=goal_title,
+                                category=category,
+                                description="AI suggested goal with milestones and routines",
+                                priority="medium",
+                                target_date=None,
+                                milestones=milestone_dicts,
+                                routines=routine_dicts
+                            )
+                        
+                        if success:
+                            st.success("🎉 Goal added to your list! Check the sidebar.")
+                            print(f"✅ GOAL ADDED SUCCESSFULLY - Triggering rerun")
+                            # Force a full page refresh to ensure sidebar updates
+                            time.sleep(0.1)  # Small delay to ensure database write completes
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to add goal. Please try again.")
+                            print(f"❌ GOAL ADDITION FAILED")
+                    
+                    except Exception as e:
+                        st.error(f"❌ Error adding goal: {str(e)}")
+                        print(f"❌ EXCEPTION ADDING GOAL: {e}")
+                        import traceback
+                        traceback.print_exc()
         
         # Add some bottom spacing so goals are always visible
         st.markdown("<div style='height: 150px;'></div>", unsafe_allow_html=True)
@@ -1082,44 +1127,102 @@ def render_camera_interface():
     """Render camera interface for multimodal input"""
     st.markdown("### 📷 Multimodal Input")
     
-    # Camera capture button
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Camera status check
+    st.markdown("**📸 Camera Status:**")
+    col_status1, col_status2 = st.columns(2)
+    with col_status1:
+        if st.button("🔍 Test Camera", help="Test if camera is accessible"):
+            try:
+                # Try to create a camera input to test
+                test_cam = st.empty()
+                with test_cam:
+                    st.camera_input("Test", key="test_camera_check")
+                st.success("✅ Camera accessible!")
+            except Exception as e:
+                st.error(f"❌ Camera issue: {str(e)[:50]}...")
     
-    with col2:
+    with col_status2:
+        st.info("💡 Camera not working? Use upload below!")
+    
+    # Camera troubleshooting
+    with st.expander("🔧 Camera Troubleshooting", expanded=False):
         st.markdown("""
-        <div class="camera-interface">
-            <h4 style="color: #4A90E2; margin-bottom: 15px;">📸 Camera & Image Analysis</h4>
-            <p style="color: #B0B0B0;">Capture live camera feed or upload images for AI analysis</p>
-        </div>
-        """, unsafe_allow_html=True)
+        **Common Issues & Solutions:**
         
-        # Camera capture
-        if st.button("📷 Capture Camera", key="capture_camera"):
-            with st.spinner("Capturing image..."):
-                image_data = gemma_system.capture_camera_image()
-                if image_data:
-                    st.session_state.captured_image = image_data
-                    st.success("Image captured!")
-                else:
-                    st.error("Failed to capture image")
+        1. **Browser Permissions**
+           - Click the camera icon in your browser address bar
+           - Select "Allow" for camera access
+           - Refresh the page after allowing
         
-        # File upload
-        uploaded_file = st.file_uploader(
-            "Or upload an image",
-            type=['jpg', 'jpeg', 'png', 'gif'],
-            help="Upload an image for AI analysis"
+        2. **Browser Compatibility**
+           - ✅ Best: Chrome, Edge, Firefox
+           - ❌ Issues: Safari, IE
+        
+        3. **Technical Issues**
+           - Clear browser cache and cookies
+           - Disable browser extensions
+           - Try incognito/private mode
+           - Restart browser
+        
+        4. **Windows Issues**
+           - Check Windows camera privacy settings
+           - Ensure no other apps are using camera
+           - Update camera drivers
+        
+        5. **Alternative Solutions**
+           - Use file upload instead
+           - Take photo with phone and upload
+           - Use screenshot tools
+        """)
+    
+    # File upload (primary method)
+    st.markdown("### 📁 **Recommended: File Upload**")
+    uploaded_file = st.file_uploader(
+        "Upload an image for AI analysis",
+        type=['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
+        help="Drag & drop or click to select an image file"
+    )
+    
+    if uploaded_file is not None:
+        # Process uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption=f"Uploaded: {uploaded_file.name}", use_container_width=True)
+        
+        # Show image details
+        st.info(f"📊 Image: {image.size[0]}x{image.size[1]} pixels, Format: {image.format}")
+        
+        # Convert to base64 for processing
+        buffered = io.BytesIO()
+        # Convert to RGB if necessary (for JPEG)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            image = image.convert('RGB')
+        image.save(buffered, format="JPEG")
+        img_base64 = base64.b64encode(buffered.getvalue()).decode()
+        st.session_state.captured_image = img_base64
+        st.success("✅ Image ready for AI analysis!")
+    
+    # Camera input (secondary method)
+    st.markdown("### 📸 **Alternative: Camera Capture**")
+    try:
+        camera_image = st.camera_input(
+            "Take a photo with your camera",
+            help="Allow camera permissions when prompted"
         )
         
-        if uploaded_file is not None:
-            # Process uploaded image
-            image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image", use_container_width=True)
-            
-            # Convert to base64 for processing
-            buffered = io.BytesIO()
-            image.save(buffered, format="JPEG")
-            img_base64 = base64.b64encode(buffered.getvalue()).decode()
+        if camera_image is not None:
+            st.success("📷 Camera photo captured!")
+            # Convert camera image to base64
+            img_base64 = base64.b64encode(camera_image.getvalue()).decode()
             st.session_state.captured_image = img_base64
+            
+    except Exception as e:
+        st.error(f"🚫 Camera Error: {str(e)}")
+        st.markdown("""
+        **Camera not working?** Try these quick fixes:
+        - 🔄 Refresh the page and allow camera permissions
+        - 🌐 Try a different browser (Chrome recommended)
+        - 📁 Use the file upload option above instead
+        """)
 
 def render_streaming_response(response_stream, placeholder):
     """Render streaming response with neural animation"""
@@ -1329,63 +1432,12 @@ def render_streaming_response(response_stream, placeholder):
             # Final response without cursor - use proactive_messages collected during streaming
             goal_aware = len(agent_info.get("relevant_goals", [])) > 0
             
-            # IMMEDIATELY DISPLAY GOAL SUGGESTIONS HERE!
+            # Store goal suggestions for stylized display later
             proactive_result = chunk.get("proactive_result", {})
             suggested_goals = proactive_result.get("suggested_goals", [])
             print(f"🎯 COMPLETE: Processing {len(suggested_goals)} goal suggestions")
             
-            if suggested_goals:
-                st.markdown("## 🎯 GOAL SUGGESTIONS - READY!")
-                for i, goal in enumerate(suggested_goals):
-                    # Handle both old string format and new dict format
-                    if isinstance(goal, str):
-                        goal_title = goal
-                        milestones = []
-                        routines = []
-                    else:
-                        goal_title = goal.get("title", "")
-                        milestones = goal.get("milestones", [])
-                        routines = goal.get("routines", [])
-                    
-                    col1, col2 = st.columns([4, 1])
-                    with col1:
-                        st.markdown(f"**{i+1}. {goal_title}**")
-                        
-                        # Show milestones if available
-                        if milestones:
-                            st.markdown("🎯 **Milestones:**")
-                            for milestone in milestones:
-                                st.markdown(f"   • {milestone}")
-                        
-                        # Show routines if available
-                        if routines:
-                            st.markdown("🔄 **Daily Routines:**")
-                            for routine in routines:
-                                st.markdown(f"   • {routine}")
-                        
-                        st.markdown(f"*AI recommended based on your conversation*")
-                    with col2:
-                        if st.button("➕ Add Goal", key=f"add_goal_{i}_{time.time()}"):
-                            # Handle both string and dict formats
-                            if isinstance(goal, str):
-                                success = gemma_system.create_goal_from_suggestion(goal)
-                            else:
-                                # Convert string lists to dict format for milestones and routines
-                                milestone_dicts = [{"title": m, "status": "pending", "progress_percentage": 0} for m in milestones]
-                                routine_dicts = [{"title": r, "frequency": "daily", "streak_count": 0, "longest_streak": 0} for r in routines]
-                                
-                                success = gemma_system.create_goal_from_suggestion(
-                                    goal_title=goal_title,
-                                    category=goal.get("category", "general"),
-                                    description=goal.get("description", ""),
-                                    priority=goal.get("priority", "medium"),
-                                    target_date=goal.get("target_date"),
-                                    milestones=milestone_dicts,
-                                    routines=routine_dicts
-                                )
-                            if success:
-                                st.success("🎉 Added!")
-                                st.rerun()
+            # REMOVED DUPLICATE - Goal suggestions will be shown by render_goal_suggestions only
             
             # CLEAN FINAL DISPLAY - No proactive duplication!
             placeholder.markdown(f"""
@@ -1505,10 +1557,8 @@ def render_chat_interface():
                     </div>
                     """, unsafe_allow_html=True)
             
-            # Show goal suggestions (from proactive result)
-            suggested_goals = proactive_result.get("suggested_goals", [])
-            if suggested_goals:
-                render_goal_suggestions(suggested_goals)
+            # Goal suggestions removed from chat history to avoid duplicates
+            # They will only show once after the latest message
     
     # 🧠 PROACTIVE INTELLIGENCE SECTION + AUTO-CONTINUATION
     st.markdown("### 🧠 Proto-AGI Proactive Intelligence")
@@ -1568,15 +1618,36 @@ def render_chat_interface():
         user_input = st.chat_input("Type your message here...")
     
     with col2:
-        # Camera input for images
-        camera_image = st.camera_input("📸 Camera", help="Take a photo to analyze")
+        # Camera input for images - improved implementation
+        st.markdown("**📸 Camera**")
+        
+        # Add help text for camera issues
+        with st.expander("📷 Camera Not Working?", expanded=False):
+            st.markdown("""
+            **Try these steps:**
+            1. **Refresh the page** and allow camera permissions
+            2. **Use Chrome/Edge** (best compatibility)
+            3. **Check browser settings** - ensure camera is allowed
+            4. **Try HTTPS**: Run with `streamlit run streamlit.py --server.enableCORS=false`
+            5. **Alternative**: Use the file upload instead
+            """)
+        
+        # Try the camera input with better error handling
+        try:
+            camera_image = st.camera_input("📸 Take Photo", 
+                                         help="Allow camera permissions in your browser",
+                                         key="main_camera")
+        except Exception as e:
+            st.error(f"Camera error: {e}")
+            st.info("💡 Try using the file upload below instead")
+            camera_image = None
     
     with col3:
         # File upload for images only (video disabled for performance)
         uploaded_file = st.file_uploader(
-            "📁 Upload",
-            type=['png', 'jpg', 'jpeg', 'gif'],
-            help="Upload image for analysis (video disabled for demo performance)"
+            "📁 Upload Image",
+            type=['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'],
+            help="Upload image for AI analysis"
         )
     
     # Determine image data source
@@ -1673,65 +1744,12 @@ def render_chat_interface():
                 # Add to history
                 st.session_state.messages.append(final_message)
                 
-                # Show goal suggestions at the bottom (always visible)
+                # Show goal suggestions using ONLY the stylized version
                 proactive_result = final_message.get("proactive_result", {})
                 suggested_goals = proactive_result.get("suggested_goals", [])
                 print(f"🎯 UI: Got {len(suggested_goals)} goal suggestions to display")
                 if suggested_goals:
-                    # BIG, OBVIOUS GOAL SUGGESTIONS DISPLAY
-                    st.markdown("## 🎯 AI Goal Suggestions")
-                    st.markdown("**The AI suggests these goals based on our conversation:**")
-                    for i, goal in enumerate(suggested_goals):
-                        # Handle both old string format and new dict format
-                        if isinstance(goal, str):
-                            goal_title = goal
-                            milestones = []
-                            routines = []
-                        else:
-                            goal_title = goal.get("title", "")
-                            milestones = goal.get("milestones", [])
-                            routines = goal.get("routines", [])
-                        
-                        col1, col2 = st.columns([4, 1])
-                        with col1:
-                            st.markdown(f"**{i+1}. {goal_title}**")
-                            
-                            # Show milestones if available
-                            if milestones:
-                                st.markdown("🎯 **Milestones:**")
-                                for milestone in milestones:
-                                    st.markdown(f"   • {milestone}")
-                            
-                            # Show routines if available
-                            if routines:
-                                st.markdown("🔄 **Daily Routines:**")
-                                for routine in routines:
-                                    st.markdown(f"   • {routine}")
-                            
-                            st.markdown(f"*AI recommended based on your conversation*")
-                        with col2:
-                            if st.button("➕ Add Goal", key=f"add_goal_{i}_{time.time()}"):
-                                # Handle both string and dict formats
-                                if isinstance(goal, str):
-                                    success = gemma_system.create_goal_from_suggestion(goal)
-                                else:
-                                    # Convert string lists to dict format for milestones and routines
-                                    milestone_dicts = [{"title": m, "status": "pending", "progress_percentage": 0} for m in milestones]
-                                    routine_dicts = [{"title": r, "frequency": "daily", "streak_count": 0, "longest_streak": 0} for r in routines]
-                                    
-                                    success = gemma_system.create_goal_from_suggestion(
-                                        goal_title=goal_title,
-                                        category=goal.get("category", "general"),
-                                        description=goal.get("description", ""),
-                                        priority=goal.get("priority", "medium"),
-                                        target_date=goal.get("target_date"),
-                                        milestones=milestone_dicts,
-                                        routines=routine_dicts
-                                    )
-                                if success:
-                                    st.success("🎉 Added!")
-                                    st.rerun()
-                    # Also call the render function
+                    # Use ONLY the stylized gradient box version with rotating stars
                     render_goal_suggestions(suggested_goals)
             
         except Exception as e:

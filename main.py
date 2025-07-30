@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 import uuid
-# import requests  # Removed for offline-first approach
+# import requests  # Removed for offmmaline-first approach
 from PIL import Image
 import cv2
 import numpy as np
