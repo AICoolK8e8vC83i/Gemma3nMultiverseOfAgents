@@ -233,7 +233,7 @@ streamlit run streamlit.py
 
 | 🧠 **AI Innovation** | 🎨 **UX Excellence** | 🔒 **Privacy & Security** |
 |:---:|:---:|:---:|
-| • Proto-AGI proactive intelligence<br/>• 100+ specialized agents<br/>• Strategic thinking chains<br/>• Auto-continuation system | • Neural network visualizations<br/>• Streaming response animations<br/>• Gradient-based UI design<br/>• Multimodal interactions | • 100% offline processing<br/>• Local data storage<br/>• No external API calls<br/>• Enterprise-grade encryption |
+| • Proto-AGI proactive intelligence<br/>• 20+ specialized agents<br/>• Strategic thinking chains<br/>• Auto-continuation system | • Neural network visualizations<br/>• Streaming response animations<br/>• Gradient-based UI design<br/>• Multimodal interactions | • 100% offline processing<br/>• Local data storage<br/>• No external API calls<br/>• Enterprise-grade encryption |
 
 </div>
 
